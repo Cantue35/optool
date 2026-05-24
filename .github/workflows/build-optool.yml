@@ -23,6 +23,7 @@ jobs:
         run: |
           uname -m
           xcodebuild -version
+          xcodebuild -list -project optool.xcodeproj
 
       - name: Build optool for Apple Silicon
         run: |
@@ -33,10 +34,11 @@ jobs:
             -target optool \
             -configuration Release \
             -sdk macosx \
-            -derivedDataPath "$PWD/build/DerivedData" \
             ARCHS=arm64 \
             ONLY_ACTIVE_ARCH=NO \
             CODE_SIGNING_ALLOWED=NO \
+            SYMROOT="$PWD/build" \
+            OBJROOT="$PWD/build/obj" \
             build
 
       - name: Package binary
@@ -44,12 +46,9 @@ jobs:
           set -euxo pipefail
 
           mkdir -p dist
-          BIN="$(find "$PWD/build/DerivedData/Build/Products/Release" -type f -name optool -perm +111 -print -quit)"
-          cp "$BIN" dist/optool
+          cp "$PWD/build/Release/optool" dist/optool
           chmod +x dist/optool
 
-          # Apple Silicon macOS generally expects Mach-O executables to be signed.
-          # This is an ad-hoc signature; no Apple Developer account needed.
           codesign --force --sign - dist/optool
 
           file dist/optool
